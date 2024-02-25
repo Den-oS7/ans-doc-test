@@ -1,0 +1,43 @@
+---
+- name: docker cont with ssh and nginx
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: build docker image
+      docker_image:
+        name: centos_ssh
+        state: present
+        source: pull
+
+    - name: run docker container
+      docker_container:
+        name: centos_ssh
+        image: centos_ssh
+        state: started
+        ports:
+          - "2222:22"
+          - "80:80"
+
+    - name: add repo to docker container
+      docker_container:
+        name: centos_ssh
+        image: centos_ssh
+        command: >
+          sh -c "yum install -y epel-release && yum install -y nginx"
+
+    - name: enable and start nginx
+      docker_container:
+        name: centos_ssh
+        image: centos_ssh
+        command: systemctl start nginx && systemctl enable nginx
+
+    - name: gather container info
+      docker_container_info:
+        name: centos_ssh
+      register: container_info
+
+    - name: write container info to file
+      template:
+        src: index.html.j2
+        dest: index.html
+...
