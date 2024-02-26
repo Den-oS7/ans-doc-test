@@ -1,7 +1,9 @@
 ---
-- name: docker cont with ssh and nginx
+- name: Docker cont with ssh and nginx
   hosts: localhost
-  gather_facts: true
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
     - name: build docker image
       docker_image:
@@ -14,30 +16,30 @@
         name: centos_ssh
         image: centos_ssh
         state: started
+        detach: yes
         ports:
           - "2222:22"
           - "80:80"
+        volumes:
+          - ./html:/usr/share/nginx/html
 
-    - name: add repo to docker container
-      docker_container:
-        name: centos_ssh
-        image: centos_ssh
-        command: >
-          sh -c "yum install -y epel-release && yum install -y nginx"
+    - name: install epel
+      command:
+        cmd: "docker exec centos_ssh yum install -y epel-release"
 
-    - name: enable and start nginx
-      docker_container:
-        name: centos_ssh
-        image: centos_ssh
-        command: systemctl start nginx && systemctl enable nginx
+    - name: install nginx
+      command:
+        cmd: "docker exec centos_ssh yum install -y nginx"
 
-    - name: gather container info
-      docker_container_info:
-        name: centos_ssh
-      register: container_info
+    - name: enable nginx
+      command:
+        cmd: "docker exec centos_ssh systemctl enable nginx"
 
-    - name: write container info to file
-      template:
-        src: index.html.j2
-        dest: index.html
-...
+    - name: run nginx
+      command:
+        cmd: "docker exec centos_ssh nginx"
+
+    - name: display resources
+      command:
+        cmd: "bash show_res.sh"
+      become: yes
