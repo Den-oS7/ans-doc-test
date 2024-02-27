@@ -6,8 +6,8 @@
     - name: build docker image
       docker_image:
         name: centos_ssh
+        path: .
         state: present
-        source: pull
 
     - name: run docker container
       docker_container:
